@@ -1,43 +1,49 @@
-# -*- coding: iso-8859-1 -*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-from error import *
-import autocompletiondlg
-import cfgdlg
-import charmapdlg
-import commandsdlg
-import config
-import dialoguechart
-import finddlg
-import gutil
-import headersdlg
-import locationsdlg
-import misc
-import myimport
-import mypickle
-import namesdlg
-import opts
-import pml
-import reports
-import screenplay
-import spellcheck
-import spellcheckcfgdlg
-import spellcheckdlg
-import splash
-import titlesdlg
-import util
-import viewmode
-import watermarkdlg
+"""
+[Trelby](http://www.trelby.org/)
+
+A free, multiplatform, feature-rich screenwriting program!
+"""
 
 import copy
-import datetime
+# import datetime
 import os
 import os.path
 import signal
 import sys
 import time
+from functools import partial
 import wx
 
-from functools import partial
+from . import error
+from . import autocompletiondlg
+from . import cfgdlg
+from . import charmapdlg
+from . import commandsdlg
+from . import config
+from . import dialoguechart
+from . import finddlg
+from . import gutil
+from . import headersdlg
+from . import locationsdlg
+from . import misc
+from . import myimport
+from . import mypickle
+from . import namesdlg
+from . import opts
+from . import pml
+from . import reports
+from . import screenplay
+from . import spellcheck
+from . import spellcheckcfgdlg
+from . import spellcheckdlg
+from . import splash
+from . import titlesdlg
+from . import util
+from . import viewmode
+from . import watermarkdlg
 
 #keycodes
 KC_CTRL_A = 1
@@ -49,29 +55,32 @@ KC_CTRL_N = 14
 KC_CTRL_P = 16
 KC_CTRL_V = 22
 
-VIEWMODE_DRAFT,\
-VIEWMODE_LAYOUT,\
-VIEWMODE_SIDE_BY_SIDE,\
-= range(3)
+VIEWMODE_DRAFT, VIEWMODE_LAYOUT, VIEWMODE_SIDE_BY_SIDE = range(3)
 
-def refreshGuiConfig():
+# UAF (Ugly As Fuck) Change config. in global var for an attribute on app class.
+cfgGui = None
+
+def refresh_gui_config():
+    """ Reload configuration. """
     global cfgGui
 
     cfgGui = config.ConfigGui(cfgGl)
 
 def getCfgGui():
+    """ Return GUI configuration. """
     return cfgGui
 
 # keeps (some) global data
 class GlobalData:
+    """ Class to encapsulate global data. """
     def __init__(self):
-
+        """ Constructor. """
         self.confFilename = misc.confPath + "/default.conf"
         self.stateFilename = misc.confPath + "/state"
         self.scDictFilename = misc.confPath + "/spell_checker_dictionary"
 
         # current script config path
-        self.scriptSettingsPath = misc.confPath
+        self.script_settiongs_path = misc.confPath
 
         # global spell checker (user) dictionary
         self.scDict = spellcheck.Dict()
@@ -263,7 +272,7 @@ class MyCtrl(wx.Control):
 
         try:
             (sp, msg) = screenplay.Screenplay.load(s, cfgGl)
-        except TrelbyError, e:
+        except error.TrelbyError, e:
             wx.MessageBox("Error loading file:\n\n%s" % e, "Error",
                           wx.OK, mainFrame)
 
@@ -486,7 +495,7 @@ class MyCtrl(wx.Control):
             misc.scriptDir = cfgGl.scriptDir
 
         cfgGl.recalc()
-        refreshGuiConfig()
+        refresh_gui_config()
         mainFrame.updateKbdCommands()
 
         for c in mainFrame.getCtrls():
@@ -2443,7 +2452,7 @@ class MyFrame(wx.Frame):
 
     def OnLoadScriptSettings(self, event = None):
         dlg = wx.FileDialog(self, "File to open",
-            defaultDir = gd.scriptSettingsPath,
+            defaultDir = gd.script_settings_path,
             wildcard = "Script setting files (*.sconf)|*.sconf|All files|*",
             style = wx.OPEN)
 
@@ -2455,19 +2464,19 @@ class MyFrame(wx.Frame):
                 cfg.load(s)
                 self.panel.ctrl.applyCfg(cfg)
 
-                gd.scriptSettingsPath = os.path.dirname(dlg.GetPath())
+                gd.script_settiongs_path = os.path.dirname(dlg.GetPath())
 
         dlg.Destroy()
 
     def OnSaveScriptSettingsAs(self, event = None):
         dlg = wx.FileDialog(self, "Filename to save as",
-            defaultDir = gd.scriptSettingsPath,
+            defaultDir = gd.script_settiongs_path,
             wildcard = "Script setting files (*.sconf)|*.sconf|All files|*",
             style = wx.SAVE | wx.OVERWRITE_PROMPT)
 
         if dlg.ShowModal() == wx.ID_OK:
             if util.writeToFile(dlg.GetPath(), self.panel.ctrl.sp.saveCfg(), self):
-                gd.scriptSettingsPath = os.path.dirname(dlg.GetPath())
+                gd.script_settiongs_path = os.path.dirname(dlg.GetPath())
 
         dlg.Destroy()
 
@@ -2602,7 +2611,7 @@ class MyApp(wx.App):
             # various reasons, if no default config file yet exists
             util.writeToFile(gd.confFilename, cfgGl.save(), None)
 
-        refreshGuiConfig()
+        refresh_gui_config()
 
         # cfgGl.scriptDir is the directory used on startup, while
         # misc.scriptDir is updated every time the user opens something in
@@ -2652,3 +2661,9 @@ def main():
 
     myApp = MyApp(0)
     myApp.MainLoop()
+
+if __name__ == '__main__' and __package__ is None:
+    from os import sys, path
+    sys.path.append(
+            os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    main()
